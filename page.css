@@ -1,0 +1,92 @@
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+
+
+
+.tools, .renderer {
+    display: flex;
+    height: 50%;
+}
+.tools-panel {
+    display: flex;
+    flex: 1 auto;
+    padding: 5px;
+}
+.tools-panel--column {
+    flex-direction: column;
+}
+.tools-panel--row {
+    flex-direction: row;
+}
+.tools-panel__title {
+    margin: 0 0 0.2em 0;
+}
+.tools-panel__textarea {
+    height: 100%;
+    width: 100%;
+}
+.tools-panel__status {
+    font-family: monospace;
+}
+.tools-panel__iframe {
+    height: 100%;
+}
+.tools-panel__difference {
+    height: 100%;
+    overflow: scroll;
+}
+
+
+
+.diff-group {
+    margin: 0 0 10px 0;
+}
+.diff-group__title {
+    margin: 0;
+}
+.diff-group__table {
+    width: 100%;
+}
+.diff-group__before {
+    background-color: #ffbdbd;
+}
+.diff-group__after {
+    background-color: #e1f7d5;
+}
+
+
+.tools-panel__views {
+    height: 100%;
+}
+.tools-panel__view {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+.tools-panel__view.is-hidden {
+    display: none;
+}
+.tools-panel__tabs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.tools-panel__tab-button,
+.tools-panel__tab {
+    cursor: pointer;
+    display: inline-block;
+    border: 1px solid #000;
+    border-bottom: none;
+    margin: 0 2px;
+    padding: 5px;
+}
+.tools-panel__tab.is-active {
+    background-color: #000;
+    color: #fff;
+}
