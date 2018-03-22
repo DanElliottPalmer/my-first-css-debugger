@@ -101,12 +101,15 @@ function getTagString(node){
     return `${node.tagName.toLowerCase()}${id}${cls}`;
 }
 
+
 function walkTree(domNode, styleMap){
     const treewalker = document.createTreeWalker(
         domNode, window.NodeFilter.SHOW_ELEMENT);
 
     while(treewalker.nextNode()){
         let node = treewalker.currentNode;
+        if(node.nodeType !== 1) continue;
+
         styleMap.set(
             getTagString(node),
             // Copy the styles as a way of freezing the
