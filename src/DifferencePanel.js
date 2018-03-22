@@ -1,4 +1,5 @@
 
+import {debounce} from './utils';
 import Panel from './Panel';
 
 class DifferencePanel extends Panel {
@@ -7,6 +8,7 @@ class DifferencePanel extends Panel {
         const templateStr = `
             <div class="tools-panel tools-panel--column">
                 <h3 class="tools-panel__title">Style difference</h3>
+                <label for="txtIgnore">Ignore keys: <input type="text" class="js-txtIgnore" /></label>
                 <div class="tools-panel__difference"></div>
             </div>
         `;
@@ -15,11 +17,42 @@ class DifferencePanel extends Panel {
         return el.firstChild;
     }
 
+    _processIgnoreKeys(value){
+        this._ignoreKeys = new Set(value.split(', ').map(a => a.trim()));
+    }
+
+    _bindListeners(){
+        this._ignore.addEventListener('input', debounce((e) => {
+            this._processIgnoreKeys(e.target.value);
+            this.saveState();
+
+            if(this._lastCompared[0] !== null && this._lastCompared[1] !== null){
+                this.compare(this._lastCompared[0], this._lastCompared[1]);
+            }
+        }, 300));
+    }
+
+    _saveState(){
+        return {
+            ignoreKeys: this._ignore.value
+        };
+    }
+
+    _readState(contents){
+        this._ignore.value = contents.ignoreKeys;
+        this._processIgnoreKeys(contents.ignoreKeys);
+    }
+
     constructor(){
         super();
         this.name = 'DifferencePanel';
         this._difference = this.el.querySelector('.tools-panel__difference');
+        this._ignore = this.el.querySelector('.js-txtIgnore');
 
+        this._ignoreKeys = new Set();
+        this._lastCompared = [null, null];
+
+        this._bindListeners();
         this.readState();
     }
 
@@ -32,11 +65,13 @@ class DifferencePanel extends Panel {
         const beforeNode = beforePreview.frame.contentWindow.document.body;
         const afterNode = afterPreview.frame.contentWindow.document.body;
 
-        walkTree(beforeNode, beforeMap);
-        walkTree(afterNode, afterMap);
+        walkTree(beforeNode, beforeMap, this._ignoreKeys);
+        walkTree(afterNode, afterMap, this._ignoreKeys);
         diffStyleMaps(beforeMap, afterMap, diffMap);
 
         this._difference.innerHTML = renderGroups(diffMap);
+        this._lastCompared[0] = beforePreview;
+        this._lastCompared[1] = afterPreview;
 
     }
 
@@ -71,7 +106,7 @@ function diffStyleMaps(beforeMap, afterMap, diffMap){
     }
 }
 
-function copyComputedStyles(cssStyles){
+function copyComputedStyles(cssStyles, ignoreKeys){
     const m = new Map();
     let i = 0;
     const len = cssStyles.length;
@@ -79,6 +114,7 @@ function copyComputedStyles(cssStyles){
 
     for(;i < len; i++){
         propertyKey = cssStyles[i];
+        if(ignoreKeys.has(propertyKey)) continue;
         m.set(
             propertyKey,
             cssStyles.getPropertyValue(propertyKey)
@@ -102,7 +138,7 @@ function getTagString(node){
 }
 
 
-function walkTree(domNode, styleMap){
+function walkTree(domNode, styleMap, ignoreKeys){
     const treewalker = document.createTreeWalker(
         domNode, window.NodeFilter.SHOW_ELEMENT);
 
@@ -114,19 +150,19 @@ function walkTree(domNode, styleMap){
             getTagString(node),
             // Copy the styles as a way of freezing the
             // computed styles
-            copyComputedStyles(window.getComputedStyle(node))
+            copyComputedStyles(window.getComputedStyle(node), ignoreKeys)
         );
 
         // :before
         styleMap.set(
             `${getTagString(node)}:before`,
-            copyComputedStyles(window.getComputedStyle(node, ':before'))
+            copyComputedStyles(window.getComputedStyle(node, ':before'), ignoreKeys)
         );
 
         // :after
         styleMap.set(
             `${getTagString(node)}:after`,
-            copyComputedStyles(window.getComputedStyle(node, ':after'))
+            copyComputedStyles(window.getComputedStyle(node, ':after'), ignoreKeys)
         );
 
     }

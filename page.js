@@ -1120,17 +1120,17 @@ if ('undefined' !== typeof module) {
 },{"./Panel":5}],4:[function(require,module,exports){
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(['module', 'exports', './Panel'], factory);
+        define(['module', 'exports', './utils', './Panel'], factory);
     } else if (typeof exports !== "undefined") {
-        factory(module, exports, require('./Panel'));
+        factory(module, exports, require('./utils'), require('./Panel'));
     } else {
         var mod = {
             exports: {}
         };
-        factory(mod, mod.exports, global.Panel);
+        factory(mod, mod.exports, global.utils, global.Panel);
         global.DifferencePanel = mod.exports;
     }
-})(this, function (module, exports, _Panel2) {
+})(this, function (module, exports, _utils, _Panel2) {
     'use strict';
 
     Object.defineProperty(exports, "__esModule", {
@@ -1237,10 +1237,44 @@ if ('undefined' !== typeof module) {
         _createClass(DifferencePanel, [{
             key: '_createPanel',
             value: function _createPanel() {
-                var templateStr = '\n            <div class="tools-panel tools-panel--column">\n                <h3 class="tools-panel__title">Style difference</h3>\n                <div class="tools-panel__difference"></div>\n            </div>\n        ';
+                var templateStr = '\n            <div class="tools-panel tools-panel--column">\n                <h3 class="tools-panel__title">Style difference</h3>\n                <label for="txtIgnore">Ignore keys: <input type="text" class="js-txtIgnore" /></label>\n                <div class="tools-panel__difference"></div>\n            </div>\n        ';
                 var el = document.createElement('div');
                 el.innerHTML = templateStr.trim();
                 return el.firstChild;
+            }
+        }, {
+            key: '_processIgnoreKeys',
+            value: function _processIgnoreKeys(value) {
+                this._ignoreKeys = new Set(value.split(', ').map(function (a) {
+                    return a.trim();
+                }));
+            }
+        }, {
+            key: '_bindListeners',
+            value: function _bindListeners() {
+                var _this2 = this;
+
+                this._ignore.addEventListener('input', (0, _utils.debounce)(function (e) {
+                    _this2._processIgnoreKeys(e.target.value);
+                    _this2.saveState();
+
+                    if (_this2._lastCompared[0] !== null && _this2._lastCompared[1] !== null) {
+                        _this2.compare(_this2._lastCompared[0], _this2._lastCompared[1]);
+                    }
+                }, 300));
+            }
+        }, {
+            key: '_saveState',
+            value: function _saveState() {
+                return {
+                    ignoreKeys: this._ignore.value
+                };
+            }
+        }, {
+            key: '_readState',
+            value: function _readState(contents) {
+                this._ignore.value = contents.ignoreKeys;
+                this._processIgnoreKeys(contents.ignoreKeys);
             }
         }]);
 
@@ -1251,7 +1285,12 @@ if ('undefined' !== typeof module) {
 
             _this.name = 'DifferencePanel';
             _this._difference = _this.el.querySelector('.tools-panel__difference');
+            _this._ignore = _this.el.querySelector('.js-txtIgnore');
 
+            _this._ignoreKeys = new Set();
+            _this._lastCompared = [null, null];
+
+            _this._bindListeners();
             _this.readState();
             return _this;
         }
@@ -1267,11 +1306,13 @@ if ('undefined' !== typeof module) {
                 var beforeNode = beforePreview.frame.contentWindow.document.body;
                 var afterNode = afterPreview.frame.contentWindow.document.body;
 
-                walkTree(beforeNode, beforeMap);
-                walkTree(afterNode, afterMap);
+                walkTree(beforeNode, beforeMap, this._ignoreKeys);
+                walkTree(afterNode, afterMap, this._ignoreKeys);
                 diffStyleMaps(beforeMap, afterMap, diffMap);
 
                 this._difference.innerHTML = renderGroups(diffMap);
+                this._lastCompared[0] = beforePreview;
+                this._lastCompared[1] = afterPreview;
             }
         }]);
 
@@ -1342,7 +1383,7 @@ if ('undefined' !== typeof module) {
         }
     }
 
-    function copyComputedStyles(cssStyles) {
+    function copyComputedStyles(cssStyles, ignoreKeys) {
         var m = new Map();
         var i = 0;
         var len = cssStyles.length;
@@ -1350,6 +1391,7 @@ if ('undefined' !== typeof module) {
 
         for (; i < len; i++) {
             propertyKey = cssStyles[i];
+            if (ignoreKeys.has(propertyKey)) continue;
             m.set(propertyKey, cssStyles.getPropertyValue(propertyKey));
         }
         return m;
@@ -1369,7 +1411,7 @@ if ('undefined' !== typeof module) {
         return '' + node.tagName.toLowerCase() + id + cls;
     }
 
-    function walkTree(domNode, styleMap) {
+    function walkTree(domNode, styleMap, ignoreKeys) {
         var treewalker = document.createTreeWalker(domNode, window.NodeFilter.SHOW_ELEMENT);
 
         while (treewalker.nextNode()) {
@@ -1379,13 +1421,13 @@ if ('undefined' !== typeof module) {
             styleMap.set(getTagString(node),
             // Copy the styles as a way of freezing the
             // computed styles
-            copyComputedStyles(window.getComputedStyle(node)));
+            copyComputedStyles(window.getComputedStyle(node), ignoreKeys));
 
             // :before
-            styleMap.set(getTagString(node) + ':before', copyComputedStyles(window.getComputedStyle(node, ':before')));
+            styleMap.set(getTagString(node) + ':before', copyComputedStyles(window.getComputedStyle(node, ':before'), ignoreKeys));
 
             // :after
-            styleMap.set(getTagString(node) + ':after', copyComputedStyles(window.getComputedStyle(node, ':after')));
+            styleMap.set(getTagString(node) + ':after', copyComputedStyles(window.getComputedStyle(node, ':after'), ignoreKeys));
         }
     }
 
@@ -1457,7 +1499,7 @@ if ('undefined' !== typeof module) {
     module.exports = exports['default'];
 });
 
-},{"./Panel":5}],5:[function(require,module,exports){
+},{"./Panel":5,"./utils":11}],5:[function(require,module,exports){
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
         define(['module', 'exports', 'eventemitter3'], factory);
@@ -2440,6 +2482,7 @@ if ('undefined' !== typeof module) {
         value: true
     });
     exports.debounce = debounce;
+    exports.throttle = throttle;
     function debounce(func, wait, immediate) {
         var timeout;
 
@@ -2454,6 +2497,27 @@ if ('undefined' !== typeof module) {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
             if (callNow) func.apply(context, args);
+        };
+    }
+
+    function throttle(func, limit) {
+        var lastFunc = void 0;
+        var lastRan = void 0;
+        return function () {
+            var context = this;
+            var args = arguments;
+            if (!lastRan) {
+                func.apply(context, args);
+                lastRan = Date.now();
+            } else {
+                clearTimeout(lastFunc);
+                lastFunc = setTimeout(function () {
+                    if (Date.now() - lastRan >= limit) {
+                        func.apply(context, args);
+                        lastRan = Date.now();
+                    }
+                }, limit - (Date.now() - lastRan));
+            }
         };
     }
 });
