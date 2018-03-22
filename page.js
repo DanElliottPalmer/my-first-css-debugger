@@ -1374,10 +1374,18 @@ if ('undefined' !== typeof module) {
 
         while (treewalker.nextNode()) {
             var node = treewalker.currentNode;
+            if (node.nodeType !== 1) continue;
+
             styleMap.set(getTagString(node),
             // Copy the styles as a way of freezing the
             // computed styles
             copyComputedStyles(window.getComputedStyle(node)));
+
+            // :before
+            styleMap.set(getTagString(node) + ':before', copyComputedStyles(window.getComputedStyle(node, ':before')));
+
+            // :after
+            styleMap.set(getTagString(node) + ':after', copyComputedStyles(window.getComputedStyle(node, ':after')));
         }
     }
 
@@ -2407,6 +2415,7 @@ if ('undefined' !== typeof module) {
         beforePreview.styles = tabbedBeforeStylePanel.selectedPanel.text;
         afterPreview.html = rPanel.html;
         afterPreview.styles = tabbedAfterStylePanel.selectedPanel.text;
+
         diffPanel.compare(beforePreview, afterPreview);
     }
 });
