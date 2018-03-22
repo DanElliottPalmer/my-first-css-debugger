@@ -36,6 +36,7 @@ html, body {
 }
 .tools-panel__iframe {
     height: 100%;
+    resize: auto;
 }
 .tools-panel__difference {
     height: 100%;
