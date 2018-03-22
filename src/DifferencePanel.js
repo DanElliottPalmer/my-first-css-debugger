@@ -116,6 +116,19 @@ function walkTree(domNode, styleMap){
             // computed styles
             copyComputedStyles(window.getComputedStyle(node))
         );
+
+        // :before
+        styleMap.set(
+            `${getTagString(node)}:before`,
+            copyComputedStyles(window.getComputedStyle(node, ':before'))
+        );
+
+        // :after
+        styleMap.set(
+            `${getTagString(node)}:after`,
+            copyComputedStyles(window.getComputedStyle(node, ':after'))
+        );
+
     }
 }
 
