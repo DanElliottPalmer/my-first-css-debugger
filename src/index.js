@@ -12,8 +12,8 @@ const dPanel = new DataPanel();
 const tabbedBeforeStylePanel = new TabbedPanel(StylePanel);
 const tabbedAfterStylePanel = new TabbedPanel(StylePanel);
 const diffPanel = new DifferencePanel();
-const beforePreview = new PreviewPanel();
-const afterPreview = new PreviewPanel();
+const beforePreview = new PreviewPanel('Before');
+const afterPreview = new PreviewPanel('After');
 
 const domTools = document.getElementById('domTools');
 const domRenderers = document.getElementById('domRenderers');
@@ -43,6 +43,7 @@ function renderHtml(){
     try {
         json = dPanel.json;
     } catch(err) {
+        console.log(err);
         return;
     }
     rPanel.processInput(json);

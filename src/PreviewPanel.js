@@ -3,12 +3,18 @@ import Panel from './Panel';
 
 class PreviewPanel extends Panel {
 
-    _bindListeners(){}
+    _bindListeners(){
+        setTimeout(() => {
+            this._frame.contentWindow.addEventListener('resize', (e) => {
+                this.setTitle(`${this.name} - ${e.target.innerWidth}`);
+            });
+        }, 1000);
+    }
 
     _createPanel(){
         const templateStr = `
             <div class="tools-panel tools-panel--column">
-                <h3 class="tools-panel__title">Before preview</h3>
+                <h3 class="tools-panel__title">${this.name}</h3>
                 <iframe class="tools-panel__iframe" src="about:blank" frameborder="0" marginheight="0" marginwidth="0" scrolling="yes"></iframe>
             </div>
         `;
@@ -17,13 +23,14 @@ class PreviewPanel extends Panel {
         return el.firstChild;
     }
 
-    constructor(){
+    constructor(name){
         super();
-        this.name = 'PreviewPanel';
+        this.name = name || `PreviewPanel-${this.counter}`;
         this._frame = this.el.querySelector('.tools-panel__iframe');
         this._html = '';
         this._styles = '';
 
+        this.setTitle(this.name);
         this._bindListeners();
     }
 

@@ -1747,27 +1747,36 @@ if ('undefined' !== typeof module) {
 
         _createClass(PreviewPanel, [{
             key: '_bindListeners',
-            value: function _bindListeners() {}
+            value: function _bindListeners() {
+                var _this2 = this;
+
+                setTimeout(function () {
+                    _this2._frame.contentWindow.addEventListener('resize', function (e) {
+                        _this2.setTitle(_this2.name + ' - ' + e.target.innerWidth);
+                    });
+                }, 1000);
+            }
         }, {
             key: '_createPanel',
             value: function _createPanel() {
-                var templateStr = '\n            <div class="tools-panel tools-panel--column">\n                <h3 class="tools-panel__title">Before preview</h3>\n                <iframe class="tools-panel__iframe" src="about:blank" frameborder="0" marginheight="0" marginwidth="0" scrolling="yes"></iframe>\n            </div>\n        ';
+                var templateStr = '\n            <div class="tools-panel tools-panel--column">\n                <h3 class="tools-panel__title">' + this.name + '</h3>\n                <iframe class="tools-panel__iframe" src="about:blank" frameborder="0" marginheight="0" marginwidth="0" scrolling="yes"></iframe>\n            </div>\n        ';
                 var el = document.createElement('div');
                 el.innerHTML = templateStr.trim();
                 return el.firstChild;
             }
         }]);
 
-        function PreviewPanel() {
+        function PreviewPanel(name) {
             _classCallCheck(this, PreviewPanel);
 
             var _this = _possibleConstructorReturn(this, (PreviewPanel.__proto__ || Object.getPrototypeOf(PreviewPanel)).call(this));
 
-            _this.name = 'PreviewPanel';
+            _this.name = name || 'PreviewPanel-' + _this.counter;
             _this._frame = _this.el.querySelector('.tools-panel__iframe');
             _this._html = '';
             _this._styles = '';
 
+            _this.setTitle(_this.name);
             _this._bindListeners();
             return _this;
         }
@@ -2482,8 +2491,8 @@ if ('undefined' !== typeof module) {
     var tabbedBeforeStylePanel = new _TabbedPanel2.default(_StylePanel2.default);
     var tabbedAfterStylePanel = new _TabbedPanel2.default(_StylePanel2.default);
     var diffPanel = new _DifferencePanel2.default();
-    var beforePreview = new _PreviewPanel2.default();
-    var afterPreview = new _PreviewPanel2.default();
+    var beforePreview = new _PreviewPanel2.default('Before');
+    var afterPreview = new _PreviewPanel2.default('After');
 
     var domTools = document.getElementById('domTools');
     var domRenderers = document.getElementById('domRenderers');
@@ -2513,6 +2522,7 @@ if ('undefined' !== typeof module) {
         try {
             json = dPanel.json;
         } catch (err) {
+            console.log(err);
             return;
         }
         rPanel.processInput(json);
