@@ -38,11 +38,17 @@ class TabbedPanel extends Panel {
 
     _addTab(name){
         const templateStr = `
-            <li class="tools-panel__tab" contenteditable>${name}</li>
+            <li class="tools-panel__tab" contenteditable>${name} <button class="tools-panel__tab__btn">(close)</button></li>
         `;
         const el = document.createElement('ul');
         el.innerHTML = templateStr.trim();
         this._tabList.appendChild(el.firstChild);
+    }
+
+    _removeTab(index){
+        // add 1 because first item is always the add new tab button
+        const tab = this._tabList.children[index + 1];
+        tab.parentNode.removeChild(tab);
     }
 
     _addView(pnl){
@@ -53,6 +59,11 @@ class TabbedPanel extends Panel {
         el.innerHTML = templateStr.trim();
         el.firstChild.appendChild(pnl.el);
         this._tabViews.appendChild(el.firstChild);
+    }
+
+    _removeView(index){
+        const tabView = this._tabViews.children[index];
+        tabView.parentNode.removeChild(tabView);
     }
 
     _getTabIndex(tabEl){
@@ -72,6 +83,10 @@ class TabbedPanel extends Panel {
         this._tabList.addEventListener('click', (e) => {
             if (e.target && e.target.matches(".tools-panel__tab")) {
                 this.selectedIndex = this._getTabIndex(e.target);
+            }
+            if (e.target && e.target.matches(".tools-panel__tab__btn")) {
+                const tabIndex = this._getTabIndex(e.target.parentNode);
+                this.removePanel(tabIndex);
             }
         });
         this._tabList.addEventListener('input', (e) => {
@@ -105,9 +120,11 @@ class TabbedPanel extends Panel {
             view.classList.add('is-hidden');
         }
 
-        let [tab, view] = this._getTabViewByIndex(index);
-        tab.classList.add('is-active');
-        view.classList.remove('is-hidden');
+        if(index > -1){
+            let [tab, view] = this._getTabViewByIndex(index);
+            tab.classList.add('is-active');
+            view.classList.remove('is-hidden');
+        }
 
         const oldIndex = this._selectedIndex;
         this._selectedIndex = index;
@@ -116,7 +133,10 @@ class TabbedPanel extends Panel {
     }
 
     get selectedPanel(){
-        return this.panels[this.selectedIndex].panel;
+        if(this.panels[this.selectedIndex]){
+            return this.panels[this.selectedIndex].panel;
+        }
+        return undefined;
     }
 
     constructor(panelType){
@@ -143,6 +163,17 @@ class TabbedPanel extends Panel {
 
         // Bubble up the change events
         panel.addListener('change', e => this.emit('change'));
+
+        this.saveState();
+    }
+
+    removePanel(index){
+        this.selectedIndex = -1;
+        this._removeTab(index);
+        this._removeView(index);
+
+        this.panels.splice(index, 1);
+        // TODO: remove listened on panel
 
         this.saveState();
     }

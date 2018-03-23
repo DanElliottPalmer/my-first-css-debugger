@@ -36,6 +36,9 @@ window.addEventListener('resize', debounce(() => {
 renderHtml();
 
 function renderHtml(){
+    if(!tabbedBeforeStylePanel.selectedPanel) return;
+    if(!tabbedAfterStylePanel.selectedPanel) return;
+
     let json = null;
     try {
         json = dPanel.json;

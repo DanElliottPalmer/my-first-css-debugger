@@ -94,3 +94,7 @@ html, body {
     background-color: #000;
     color: #fff;
 }
+.tools-panel__tab__btn {
+    cursor: pointer;
+    font-size: 10px;
+}

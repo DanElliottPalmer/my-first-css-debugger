@@ -2271,10 +2271,17 @@ if ('undefined' !== typeof module) {
         }, {
             key: '_addTab',
             value: function _addTab(name) {
-                var templateStr = '\n            <li class="tools-panel__tab" contenteditable>' + name + '</li>\n        ';
+                var templateStr = '\n            <li class="tools-panel__tab" contenteditable>' + name + ' <button class="tools-panel__tab__btn">(close)</button></li>\n        ';
                 var el = document.createElement('ul');
                 el.innerHTML = templateStr.trim();
                 this._tabList.appendChild(el.firstChild);
+            }
+        }, {
+            key: '_removeTab',
+            value: function _removeTab(index) {
+                // add 1 because first item is always the add new tab button
+                var tab = this._tabList.children[index + 1];
+                tab.parentNode.removeChild(tab);
             }
         }, {
             key: '_addView',
@@ -2284,6 +2291,12 @@ if ('undefined' !== typeof module) {
                 el.innerHTML = templateStr.trim();
                 el.firstChild.appendChild(pnl.el);
                 this._tabViews.appendChild(el.firstChild);
+            }
+        }, {
+            key: '_removeView',
+            value: function _removeView(index) {
+                var tabView = this._tabViews.children[index];
+                tabView.parentNode.removeChild(tabView);
             }
         }, {
             key: '_getTabIndex',
@@ -2305,6 +2318,10 @@ if ('undefined' !== typeof module) {
                 this._tabList.addEventListener('click', function (e) {
                     if (e.target && e.target.matches(".tools-panel__tab")) {
                         _this3.selectedIndex = _this3._getTabIndex(e.target);
+                    }
+                    if (e.target && e.target.matches(".tools-panel__tab__btn")) {
+                        var tabIndex = _this3._getTabIndex(e.target.parentNode);
+                        _this3.removePanel(tabIndex);
                     }
                 });
                 this._tabList.addEventListener('input', function (e) {
@@ -2337,20 +2354,22 @@ if ('undefined' !== typeof module) {
                 if (this._selectedIndex > -1) {
                     var _getTabViewByIndex2 = this._getTabViewByIndex(this._selectedIndex),
                         _getTabViewByIndex3 = _slicedToArray(_getTabViewByIndex2, 2),
-                        _tab = _getTabViewByIndex3[0],
-                        _view = _getTabViewByIndex3[1];
+                        tab = _getTabViewByIndex3[0],
+                        view = _getTabViewByIndex3[1];
 
-                    _tab.classList.remove('is-active');
-                    _view.classList.add('is-hidden');
+                    tab.classList.remove('is-active');
+                    view.classList.add('is-hidden');
                 }
 
-                var _getTabViewByIndex4 = this._getTabViewByIndex(index),
-                    _getTabViewByIndex5 = _slicedToArray(_getTabViewByIndex4, 2),
-                    tab = _getTabViewByIndex5[0],
-                    view = _getTabViewByIndex5[1];
+                if (index > -1) {
+                    var _getTabViewByIndex4 = this._getTabViewByIndex(index),
+                        _getTabViewByIndex5 = _slicedToArray(_getTabViewByIndex4, 2),
+                        _tab = _getTabViewByIndex5[0],
+                        _view = _getTabViewByIndex5[1];
 
-                tab.classList.add('is-active');
-                view.classList.remove('is-hidden');
+                    _tab.classList.add('is-active');
+                    _view.classList.remove('is-hidden');
+                }
 
                 var oldIndex = this._selectedIndex;
                 this._selectedIndex = index;
@@ -2360,7 +2379,10 @@ if ('undefined' !== typeof module) {
         }, {
             key: 'selectedPanel',
             get: function get() {
-                return this.panels[this.selectedIndex].panel;
+                if (this.panels[this.selectedIndex]) {
+                    return this.panels[this.selectedIndex].panel;
+                }
+                return undefined;
             }
         }]);
 
@@ -2397,6 +2419,18 @@ if ('undefined' !== typeof module) {
                 panel.addListener('change', function (e) {
                     return _this4.emit('change');
                 });
+
+                this.saveState();
+            }
+        }, {
+            key: 'removePanel',
+            value: function removePanel(index) {
+                this.selectedIndex = -1;
+                this._removeTab(index);
+                this._removeView(index);
+
+                this.panels.splice(index, 1);
+                // TODO: remove listened on panel
 
                 this.saveState();
             }
@@ -2472,6 +2506,9 @@ if ('undefined' !== typeof module) {
     renderHtml();
 
     function renderHtml() {
+        if (!tabbedBeforeStylePanel.selectedPanel) return;
+        if (!tabbedAfterStylePanel.selectedPanel) return;
+
         var json = null;
         try {
             json = dPanel.json;
