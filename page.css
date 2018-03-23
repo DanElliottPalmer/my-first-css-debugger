@@ -42,6 +42,9 @@ html, body {
     height: 100%;
     overflow: scroll;
 }
+.tools-panel__setting {
+    display: inline-block;
+}
 
 
 

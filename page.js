@@ -1237,7 +1237,7 @@ if ('undefined' !== typeof module) {
         _createClass(DifferencePanel, [{
             key: '_createPanel',
             value: function _createPanel() {
-                var templateStr = '\n            <div class="tools-panel tools-panel--column">\n                <h3 class="tools-panel__title">Style difference</h3>\n                <label for="txtIgnore">Ignore keys: <input type="text" class="js-txtIgnore" /></label>\n                <div class="tools-panel__difference"></div>\n            </div>\n        ';
+                var templateStr = '\n            <div class="tools-panel tools-panel--column">\n                <h3 class="tools-panel__title">Style difference</h3>\n                <div class="tools-panel__settings">\n                    <label class="tools-panel__setting">Ignore keys: <input type="text" class="js-txtIgnore" /></label>\n                    <label class="tools-panel__setting">Hide :before <input type="checkbox" class="js-chkBefore" /></label>\n                    <label class="tools-panel__setting">Hide :after <input type="checkbox" class="js-chkAfter" /></label>\n                </div>\n                <div class="tools-panel__difference"></div>\n            </div>\n        ';
                 var el = document.createElement('div');
                 el.innerHTML = templateStr.trim();
                 return el.firstChild;
@@ -1262,18 +1262,35 @@ if ('undefined' !== typeof module) {
                         _this2.compare(_this2._lastCompared[0], _this2._lastCompared[1]);
                     }
                 }, 300));
+
+                this._chkBefore.addEventListener('change', function (e) {
+                    _this2.saveState();
+                    if (_this2._lastCompared[0] !== null && _this2._lastCompared[1] !== null) {
+                        _this2.compare(_this2._lastCompared[0], _this2._lastCompared[1]);
+                    }
+                });
+                this._chkAfter.addEventListener('change', function (e) {
+                    _this2.saveState();
+                    if (_this2._lastCompared[0] !== null && _this2._lastCompared[1] !== null) {
+                        _this2.compare(_this2._lastCompared[0], _this2._lastCompared[1]);
+                    }
+                });
             }
         }, {
             key: '_saveState',
             value: function _saveState() {
                 return {
-                    ignoreKeys: this._ignore.value
+                    ignoreKeys: this._ignore.value,
+                    ignoreBefore: this._chkBefore.checked,
+                    ignoreAfter: this._chkAfter.checked
                 };
             }
         }, {
             key: '_readState',
             value: function _readState(contents) {
                 this._ignore.value = contents.ignoreKeys;
+                this._chkBefore.checked = contents.ignoreBefore;
+                this._chkAfter.checked = contents.ignoreAfter;
                 this._processIgnoreKeys(contents.ignoreKeys);
             }
         }]);
@@ -1286,6 +1303,8 @@ if ('undefined' !== typeof module) {
             _this.name = 'DifferencePanel';
             _this._difference = _this.el.querySelector('.tools-panel__difference');
             _this._ignore = _this.el.querySelector('.js-txtIgnore');
+            _this._chkBefore = _this.el.querySelector('.js-chkBefore');
+            _this._chkAfter = _this.el.querySelector('.js-chkAfter');
 
             _this._ignoreKeys = new Set();
             _this._lastCompared = [null, null];
@@ -1306,8 +1325,8 @@ if ('undefined' !== typeof module) {
                 var beforeNode = beforePreview.frame.contentWindow.document.body;
                 var afterNode = afterPreview.frame.contentWindow.document.body;
 
-                walkTree(beforeNode, beforeMap, this._ignoreKeys);
-                walkTree(afterNode, afterMap, this._ignoreKeys);
+                walkTree(beforeNode, beforeMap, this._ignoreKeys, this._chkBefore.checked, this._chkAfter.checked);
+                walkTree(afterNode, afterMap, this._ignoreKeys, this._chkBefore.checked, this._chkAfter.checked);
                 diffStyleMaps(beforeMap, afterMap, diffMap);
 
                 this._difference.innerHTML = renderGroups(diffMap);
@@ -1412,6 +1431,9 @@ if ('undefined' !== typeof module) {
     }
 
     function walkTree(domNode, styleMap, ignoreKeys) {
+        var ignoreBefore = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+        var ignoreAfter = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+
         var treewalker = document.createTreeWalker(domNode, window.NodeFilter.SHOW_ELEMENT);
 
         while (treewalker.nextNode()) {
@@ -1423,11 +1445,15 @@ if ('undefined' !== typeof module) {
             // computed styles
             copyComputedStyles(window.getComputedStyle(node), ignoreKeys));
 
-            // :before
-            styleMap.set(getTagString(node) + ':before', copyComputedStyles(window.getComputedStyle(node, ':before'), ignoreKeys));
+            if (!ignoreBefore) {
+                // :before
+                styleMap.set(getTagString(node) + ':before', copyComputedStyles(window.getComputedStyle(node, ':before'), ignoreKeys));
+            }
 
-            // :after
-            styleMap.set(getTagString(node) + ':after', copyComputedStyles(window.getComputedStyle(node, ':after'), ignoreKeys));
+            if (!ignoreAfter) {
+                // :after
+                styleMap.set(getTagString(node) + ':after', copyComputedStyles(window.getComputedStyle(node, ':after'), ignoreKeys));
+            }
         }
     }
 
@@ -2482,7 +2508,6 @@ if ('undefined' !== typeof module) {
         value: true
     });
     exports.debounce = debounce;
-    exports.throttle = throttle;
     function debounce(func, wait, immediate) {
         var timeout;
 
@@ -2497,27 +2522,6 @@ if ('undefined' !== typeof module) {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
             if (callNow) func.apply(context, args);
-        };
-    }
-
-    function throttle(func, limit) {
-        var lastFunc = void 0;
-        var lastRan = void 0;
-        return function () {
-            var context = this;
-            var args = arguments;
-            if (!lastRan) {
-                func.apply(context, args);
-                lastRan = Date.now();
-            } else {
-                clearTimeout(lastFunc);
-                lastFunc = setTimeout(function () {
-                    if (Date.now() - lastRan >= limit) {
-                        func.apply(context, args);
-                        lastRan = Date.now();
-                    }
-                }, limit - (Date.now() - lastRan));
-            }
         };
     }
 });
